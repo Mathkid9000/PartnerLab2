@@ -1,8 +1,11 @@
 //
 //  ContentView.swift
-//  PartnerLab2
 //
-//  Created by Mac User on 10/11/25.
+//  Assignment: PartnerLab2
+//  Created by:
+//              Liam Christensen
+//              Edgar Rosales
+//  Date:       10/11/25.
 //
 
 import SwiftUI
@@ -28,6 +31,7 @@ struct ContentView: View {
         }
         return tiles
     }
+
     
     var body: some View {
         let tiles = generateTiles()
@@ -35,18 +39,50 @@ struct ContentView: View {
         Text("Memory Game")
             .font(/*@START_MENU_TOKEN@*/.title/*@END_MENU_TOKEN@*/)
             .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
-        LazyHGrid(rows: [GridItem(.fixed(80)),GridItem(.fixed(80)),GridItem(.fixed(80)),GridItem(.fixed(80))]) {
+        LazyHGrid(rows:
+                    [GridItem(.adaptive(minimum: 40, maximum: .infinity)),
+                     GridItem(.adaptive(minimum: 40, maximum: .infinity)),
+                     GridItem(.adaptive(minimum: 40, maximum: .infinity)),
+                     GridItem(.adaptive(minimum: 40, maximum: .infinity))],
+                  spacing: 0
+        )
+        {
             ForEach(0..<16) { i in
-                VStack{
-                    Image("\(tiles[i])").resizable()
-                        .frame(width:50,height:50)
-                        .padding(15)
-                        .onTapGesture {
-                            print("Card tapped")
-                        }
-                }
+                CardView (image: "\(tiles[i])")
+                    .frame(minWidth: 60, maxWidth: .infinity)
             }
-        }
+        }.padding(5)
+    }
+}
+
+// Implements functionality to cover and uncover cars upon tap gesture
+struct CardView: View {
+    var image: String
+    //var image: Int
+    @State var isFaceUp: Bool = false // false: Cards covered by default, true: cards uncovered by default
+    var body: some View {
+        ZStack {
+            let shape = Rectangle().foregroundColor(.blue)
+                .frame(width: 70.0, height: 70.0)
+                //.padding()
+            
+            Image(image)
+                .resizable()
+                .frame(width: 50, height: 50)
+                .scaledToFit()
+                //.padding(5)
+            
+            if isFaceUp {
+                shape.opacity(0)
+            }
+            else {
+                shape.opacity(1)
+            }
+        }.padding()
+            .onTapGesture {
+                isFaceUp = !isFaceUp
+            }
+        
     }
 }
 
