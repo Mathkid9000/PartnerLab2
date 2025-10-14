@@ -11,7 +11,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    
+    // Logic for generating a random board of paired tiles
     func generateTiles() -> [Int] {
         var possibleTiles: [Int] = Array(1..<12)
         var selectedTileTypes: [Int] = []
@@ -32,7 +32,9 @@ struct ContentView: View {
         return tiles
     }
 
-    
+    static var tileUp: CardView? = nil // current flipped card -> nil if no card is flipped over
+    static var completePairs: Int = 0 // amount of correctly matched pairs
+    static var isProcessingClick: Bool = false // small time allocated for showing second card in pair
     var body: some View {
         let tiles = generateTiles()
         
@@ -48,29 +50,81 @@ struct ContentView: View {
         )
         {
             ForEach(0..<16) { i in
-                CardView (image: "\(tiles[i])")
-                    .frame(minWidth: 60, maxWidth: .infinity)
+                CardView (image: "\(tiles[i])", id_index: i)
+                    .frame(minWidth: 40, maxWidth: .infinity)
             }
-        }.padding(5)
+        }.padding(0)
     }
 }
 
 // Implements functionality to cover and uncover cars upon tap gesture
 struct CardView: View {
     var image: String
+    var id_index: Int
     //var image: Int
     @State var isFaceUp: Bool = false // false: Cards covered by default, true: cards uncovered by default
+    @State var isComplete: Bool = false // false: Cards have no effect, true: add an opacity effect to show that it has been paired
+    
+    // Logic for when a card is flipped over
+    func flipCard() {
+        if ContentView.isProcessingClick == true {
+            return
+        }
+        
+        if ContentView.tileUp == nil {
+            ContentView.tileUp = self
+            isFaceUp = true
+        }
+        else {
+            if ContentView.tileUp!.id_index == id_index {
+                return
+            }
+
+            isFaceUp = true
+            if ContentView.tileUp!.image == image {
+                ContentView.completePairs += 1
+                isComplete = true
+                ContentView.tileUp?.isComplete = true
+                ContentView.tileUp = nil
+            }
+            else {
+                ContentView.isProcessingClick = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    ContentView.tileUp!.isFaceUp = false
+                    isFaceUp = false
+                    ContentView.tileUp = nil
+                    ContentView.isProcessingClick = false
+                }
+            }
+        }
+    }
+    
     var body: some View {
         ZStack {
-            let shape = Rectangle().foregroundColor(.blue)
-                .frame(width: 70.0, height: 70.0)
-                //.padding()
+            let shape = ZStack {
+                RoundedRectangle(cornerSize: CGSize(width: 6, height: 6))
+                    .foregroundColor(.white)
+                    .shadow(color: .black, radius: 0, y: 4)
+                    .border(Color.black, width: 1)
+                    .frame(width: 60, height: 60)
+                    .padding(0)
+                LinearGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: .init(.sRGB, red:156/255, green:79/255, blue:150/255), location: 0),
+                            .init(color: .init(.sRGB, red:255/255, green:99/255, blue:85/255), location: 0.5),
+                            .init(color: .init(.sRGB, red:251/255, green:169/255, blue:73/255), location: 1)
+                        ]),
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+            }
+            
             
             Image(image)
                 .resizable()
-                .frame(width: 50, height: 50)
+                .frame(width: 60, height: 60)
                 .scaledToFit()
-                //.padding(5)
+                .opacity(isComplete ? 0.5 : 1)
             
             if isFaceUp {
                 shape.opacity(0)
@@ -79,9 +133,7 @@ struct CardView: View {
                 shape.opacity(1)
             }
         }.padding()
-            .onTapGesture {
-                isFaceUp = !isFaceUp
-            }
+            .onTapGesture(perform: flipCard)
         
     }
 }
